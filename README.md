@@ -1,42 +1,39 @@
-# DIOSPA: Divisi Code - Training & Introduction
+# Tugas Bidang Divisi Code
 
-## Project Overview
+## Overview
+This repository contains the Training and Introduction prototype for the Divisi Code. 
 
-This repository contains the barebones prototype for the DIOSPA Divisi Code phase. Following the project guidelines, this implementation focuses strictly on **Option 4 (Hollow Knight Paradigm)**, prioritizing highly responsive, deterministic 2D kinematics and a fluid combat system over visual complexity. 
+The ultimate goal of this build is a "Chimera Prototype"—an ambitious integration of the four mandated mechanical options into a unified 2D side-scrolling system. It aims to combine precise custom kinematics (Hollow Knight) with data-driven narrative systems (Monkey Island), spatial proximity interactions (King's Quest), and environmental state toggling (Space for the Unbound).
 
-The current build establishes the core movement loop and attack queuing logic within a Godot 4.x `CharacterBody2D` environment.
+## Current Progress (v0.1 - Kinematics Foundation)
+The current build focuses on **Option 4 (Precision Movement & Combat)**. 
+Engine defaults have been bypassed to implement raw variable calculations for movement logic.
 
-## Current System Architecture
-
-The player controller currently handles the following mechanical loops:
-
-### Kinematics & Mobility
-* **Variable Jump Height:** Upward velocity is dynamically decelerated upon early release of the jump input, providing precise aerial control.
-* **Double Jump Capability:** Independent cooldown timer governing secondary mid-air propulsion.
-* **Linear Dash:** Horizontal high-speed translation vector bypassing standard acceleration, tied to a strict cooldown loop.
-* **Directional State:** Sprite orientation matrices flip automatically based on the active horizontal movement axis.
-
-### Combat Logic
-* **Attack Queuing (Combo System):** An integer-based local state machine tracks attack cycles. Input during `attack1` is buffered in memory (`next_attack_queued = true`), seamlessly triggering `attack2` immediately after the first animation frame data concludes.
+### Mechanics Implemented:
+* **Custom Kinematic Movement:** 2D platforming physics independent of default engine gravity mapping.
+* **Variable Jump Height:** Jump arc dynamically recalculates based on input release timing (`decelerate_on_jump_release`).
+* **Double Jump Logic:** Integrated cooldown and state tracking for mid-air jumps.
+* **I-Frame Dash:** Fixed-distance horizontal translation ignoring gravity.
+* **Attack Queuing (Combo System):** An input buffer that remembers subsequent attack commands during active animation frames to trigger smooth combo transitions.
 
 ## Controls
-
-| Action | Keybinding |
+| Action | Key Binding |
 | :--- | :--- |
-| **Move Left/Right** | `Left Arrow` / `Right Arrow` |
-| **Jump** | `Spacebar` (Hold for max height, tap for short hop) |
+| **Move Left/Right** | `Left Arrow` / `Right Arrow` (or `A` / `D`) |
+| **Jump / Double Jump** | `Spacebar` |
 | **Dash** | `Shift` |
-| **Melee Attack** | `A` (Press consecutively for combos) |
+| **Melee Attack / Combo** | `A` key |
 
-## Development Roadmap (Next Steps)
+## Development Roadmap (Path to May 4)
+- [x] **Phase 1:** Core Kinematics & Input Polling (Current).
+- [ ] **Phase 2:** Refactoring monolithic logic into a strict Finite State Machine (FSM) Node hierarchy.
+- [ ] **Phase 3:** Implementing `Area2D` proximity triggers (Option 2).
+- [ ] **Phase 4:** Integrating JSON/Dictionary data structures for branching dialogue UI (Option 1).
+- [ ] **Phase 5:** Global Singletons and dual-TileMap visibility toggling (Option 3).
 
-To fully align with the Divisi Code architectural requirements before the deadline, the following systems are scheduled for deployment:
-
-- [ ] **FSM Refactoring:** Abstract the current monolithic `_physics_process` logic into isolated, modular Node-based state scripts (`IdleState`, `RunState`, `JumpState`, `AttackState`).
-- [ ] **First-Principles Gravity:** Overwrite the engine's default `get_gravity()` with custom mathematical derivations based on peak-height ($h_{max}$) and time-to-apex ($t_{apex}$) axioms.
-- [ ] **Input Buffering:** Implement a 0.1-second Coyote Time timer and a Jump Buffer to maximize input responsiveness.
-- [ ] **I-Frame Integration:** Disconnect enemy hitboxes during the 0.2-second Dash state.
-- [ ] **AI Proximity:** Instantiate a basic patrol enemy with RayCast ledge-detection.
-
-## Execution Philosophy
-*"Barebones Only."* No time is allocated to advanced shaders, complex UI, or high-fidelity sprites. The core loop is the sole priority.
+## Setup & Execution
+1. Clone this repository.
+2. Open Godot Engine (v4.x).
+3. Import the `project.godot` file.
+4. Run the main `Level` scene. 
+*(Note: An HTML5 Web Build will be provided in the releases tab upon final deployment).*
