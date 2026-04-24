@@ -2,7 +2,7 @@
 
 ![Status](https://img.shields.io/badge/Status-Work_In_Progress-orange)
 ![Engine](https://img.shields.io/badge/Godot-4.x-blue)
-![Target](https://img.shields.io/badge/Deployment-May_4-success)
+![Target](https://img.shields.io/badge/Deployment-April_25-success)
 
 ## Overview
 This repository contains the technical calibration prototype for DIOSPA Divisi Code. It is engineered as a "chimera" system, hybridizing the mechanical requirements of four distinct design paradigms into a single, cohesive 2D engine. 
