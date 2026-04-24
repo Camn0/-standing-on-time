@@ -43,7 +43,3 @@ The integration of all four required options is proceeding sequentially to maint
 
 ## Execution & Compilation
 *(Build instructions and executable links will be generated here upon final HTML5/WebAssembly compilation prior to the deadline.)*
-
----
-*"Sebuah realitas sistemik yang baik dimulai dari fondasi kode yang jujur."* [cite: 197]  
-*"Yang matil, nanti hamil"* [cite: 198]
