@@ -5,99 +5,134 @@ class_name Player
 @export var JUMP_VELOCITY = -400.0
 @export_range(0,1) var decelerate_on_jump_release = 0.5
 @export var dash_range = 7.5
-
 @export var dash_cooldown = 0.0
-@export var double_jump_cooldown = 0.0
 
-# Attack variables
+var has_double_jumped: bool = false
+var coyote_timer: float = 0.0
+var jump_buffer_timer: float = 0.0
+const COYOTE_MAX: float = 0.1
+const BUFFER_MAX: float = 0.1
+var last_horizontal_direction = 1
+
+# --- COMBAT MEMORY ---
 @export var attack_state = 0
 var attack_timer = 0.0 
-var next_attack_queued = false # <-- NEW: Remembers if you pressed 'a' during attack1
+var next_attack_queued = false
+var attack_cooldown: float = 0.0 
+
+# --- STUN & I-FRAMES ---
+var stun_timer: float = 0.0
+var invincibility_timer: float = 0.0 # THE SPAM KILLER
 
 @onready var animated_sprite = $AnimatedSprite2D
-
-var last_horizontal_direction = 1
-var jump_state = 0
+@onready var state_machine = $StateMachine
+@onready var sword_hitbox = $SwordHitbox
 
 func _physics_process(delta: float) -> void:
-	# 1. GRAVITY & JUMP STATE
-	if not is_on_floor():
-		jump_state = 1
-		velocity += get_gravity() * delta
+	if dash_cooldown > 0: dash_cooldown -= delta
+	if attack_cooldown > 0: attack_cooldown -= delta 
+	
+	# --- I-FRAME BLINK LOGIC ---
+	if invincibility_timer > 0:
+		invincibility_timer -= delta
+		# Make the sprite blink every few frames while invincible
+		animated_sprite.visible = Engine.get_frames_drawn() % 10 < 5
 	else:
-		jump_state = 0
-	
-	if Input.is_action_just_pressed("space") and is_on_floor():
-		velocity.y = JUMP_VELOCITY
-	
-	if Input.is_action_just_released("space") and velocity.y < 0:
-		velocity.y *= decelerate_on_jump_release
-	
-	if Input.is_action_just_pressed("space") and double_jump_cooldown <= 0 and jump_state == 1:
-		velocity.y = JUMP_VELOCITY
-		double_jump_cooldown = 1.0
+		animated_sprite.visible = true
+	# ---------------------------
+
+	if stun_timer > 0:
+		stun_timer -= delta
+		if not is_on_floor(): velocity += get_gravity() * delta
+		move_and_slide()
+		return 
 		
-	if double_jump_cooldown > 0:
-		double_jump_cooldown -= delta
-
-	# 2. MOVEMENT
-	var direction := Input.get_axis("left", "right")
-	if direction:
-		velocity.x = direction * SPEED
-		last_horizontal_direction = direction
+	if is_on_floor():
+		coyote_timer = COYOTE_MAX
+		has_double_jumped = false
 	else:
-		velocity.x = move_toward(velocity.x, 0, SPEED)
+		coyote_timer -= delta
+		
+	if Input.is_action_just_pressed("space"): jump_buffer_timer = BUFFER_MAX
+	else: jump_buffer_timer -= delta
 
-	# Flip sprite based on movement direction
-	animated_sprite.flip_h = last_horizontal_direction < 0
+	if jump_buffer_timer > 0.0 and coyote_timer > 0.0:
+		execute_jump()
 
-	# 3. DASH
-	if Input.is_action_just_pressed("shift") and dash_cooldown <= 0:
-		velocity.x = last_horizontal_direction * dash_range * SPEED
-		dash_cooldown = 1.0
-	
-	if dash_cooldown > 0:
-		dash_cooldown -= delta
+	process_attacks(delta)
+	update_animations()
 
-	# 4. ATTACK LOGIC & COMBOS
+func execute_jump() -> void:
+	jump_buffer_timer = 0.0
+	coyote_timer = 0.0
+	state_machine.on_child_transition(state_machine.current_state, "jump")
+
+func process_attacks(delta: float) -> void:
 	if attack_state > 0:
 		attack_timer -= delta
-		
-		# If they press attack while attack1 is already playing, queue it up!
 		if Input.is_action_just_pressed("a") and attack_state == 1:
 			next_attack_queued = true
 			
-		# When the current attack animation finishes (timer hits 0)
 		if attack_timer <= 0:
 			if attack_state == 1 and next_attack_queued:
-				# Trigger attack2 smoothly right as attack1 ends
-				attack_state = 2
-				attack_timer = 0.5 # <-- Change to exact duration of attack2
+				attack_state = 2 
+				attack_timer = 0.5 
 				animated_sprite.play("attack2")
-				next_attack_queued = false # Reset the queue
+				next_attack_queued = false 
+				deal_damage()
 			else:
-				# No combo queued, return to normal
 				attack_state = 0
 				next_attack_queued = false
+				attack_cooldown = 0.3 
 				
-	# Start the attack combo from idle/running
-	elif Input.is_action_just_pressed("a"):
+	elif Input.is_action_just_pressed("a") and attack_cooldown <= 0:
 		attack_state = 1
-		attack_timer = 0.5 # <-- Change to exact duration of attack1
+		attack_timer = 0.5 
 		animated_sprite.play("attack1")
 		next_attack_queued = false
+		deal_damage()
 
-	# 5. BASE ANIMATIONS
-	if attack_state == 0:
-		if not is_on_floor():
-			if velocity.y < 0:
-				animated_sprite.play("jump")
-			else:
-				animated_sprite.play("fall")
-		else:
-			if direction != 0:
-				animated_sprite.play("run")
-			else:
-				animated_sprite.play("idle")
+func deal_damage() -> void:
+	if not sword_hitbox: return
+	var bodies = sword_hitbox.get_overlapping_bodies()
+	for body in bodies:
+		if body is BasicEnemy:
+			var knockback_dir = sign(body.global_position.x - global_position.x)
+			if knockback_dir == 0: knockback_dir = last_horizontal_direction
+			body.take_hit(1, knockback_dir * 300.0)
 
-	move_and_slide()
+func update_animations() -> void:
+	if stun_timer > 0: return
+
+	if last_horizontal_direction != 0:
+		animated_sprite.flip_h = last_horizontal_direction < 0
+		if sword_hitbox:
+			sword_hitbox.scale.x = last_horizontal_direction
+
+	if attack_state > 0: return
+	if state_machine.current_state is DashState:
+		animated_sprite.play("run") 
+		return
+
+	if not is_on_floor():
+		if velocity.y < 0: animated_sprite.play("jump")
+		else: animated_sprite.play("fall")
+	else:
+		if Input.get_axis("left", "right") != 0: animated_sprite.play("run")
+		else: animated_sprite.play("idle")
+
+func take_hit(damage: int, knockback_force: float) -> void:
+	# IF WE ARE INVINCIBLE, IGNORE THE HIT ENTIRELY
+	if invincibility_timer > 0: return 
+	
+	attack_state = 0
+	attack_timer = 0.0
+	next_attack_queued = false
+	
+	# Give the player 1 second of God-mode and 0.4 seconds of physical stun
+	invincibility_timer = 1.0 
+	stun_timer = 0.4 
+	
+	velocity.x = knockback_force 
+	velocity.y = -100.0 # Tiny pop up to clear floor friction
+	animated_sprite.play("take_hit")
