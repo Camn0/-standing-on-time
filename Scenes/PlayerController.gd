@@ -4,7 +4,7 @@ class_name Player
 @export var SPEED = 300.0
 @export var JUMP_VELOCITY = -400.0
 @export_range(0,1) var decelerate_on_jump_release = 0.5
-@export var dash_range = 7.5
+@export var dash_range = 5.0
 @export var dash_cooldown = 0.0
 
 var has_double_jumped: bool = false
@@ -22,7 +22,6 @@ var attack_cooldown: float = 0.0
 
 # --- STUN & I-FRAMES ---
 var stun_timer: float = 0.0
-var invincibility_timer: float = 0.0 # THE SPAM KILLER
 
 @onready var animated_sprite = $AnimatedSprite2D
 @onready var state_machine = $StateMachine
@@ -31,15 +30,6 @@ var invincibility_timer: float = 0.0 # THE SPAM KILLER
 func _physics_process(delta: float) -> void:
 	if dash_cooldown > 0: dash_cooldown -= delta
 	if attack_cooldown > 0: attack_cooldown -= delta 
-	
-	# --- I-FRAME BLINK LOGIC ---
-	if invincibility_timer > 0:
-		invincibility_timer -= delta
-		# Make the sprite blink every few frames while invincible
-		animated_sprite.visible = Engine.get_frames_drawn() % 10 < 5
-	else:
-		animated_sprite.visible = true
-	# ---------------------------
 
 	if stun_timer > 0:
 		stun_timer -= delta
@@ -62,6 +52,8 @@ func _physics_process(delta: float) -> void:
 	process_attacks(delta)
 	update_animations()
 
+	move_and_slide()
+
 func execute_jump() -> void:
 	jump_buffer_timer = 0.0
 	coyote_timer = 0.0
@@ -79,7 +71,10 @@ func process_attacks(delta: float) -> void:
 				attack_timer = 0.5 
 				animated_sprite.play("attack2")
 				next_attack_queued = false 
-				deal_damage()
+				
+				# FIX: Wait for attack2 impact frame
+				await get_tree().create_timer(0.15).timeout
+				if attack_state == 2: deal_damage()
 			else:
 				attack_state = 0
 				next_attack_queued = false
@@ -90,7 +85,10 @@ func process_attacks(delta: float) -> void:
 		attack_timer = 0.5 
 		animated_sprite.play("attack1")
 		next_attack_queued = false
-		deal_damage()
+		
+		# FIX: Wait for attack1 impact frame before dealing damage
+		await get_tree().create_timer(0.15).timeout
+		if attack_state == 1: deal_damage()
 
 func deal_damage() -> void:
 	if not sword_hitbox: return
@@ -104,13 +102,15 @@ func deal_damage() -> void:
 func update_animations() -> void:
 	if stun_timer > 0: return
 
-	if last_horizontal_direction != 0:
+	var move_dir = Input.get_axis("left", "right")
+	if move_dir != 0:
+		last_horizontal_direction = sign(move_dir)
 		animated_sprite.flip_h = last_horizontal_direction < 0
 		if sword_hitbox:
 			sword_hitbox.scale.x = last_horizontal_direction
 
 	if attack_state > 0: return
-	if state_machine.current_state is DashState:
+	if state_machine.current_state and state_machine.current_state.name == "DashState":
 		animated_sprite.play("run") 
 		return
 
@@ -118,19 +118,15 @@ func update_animations() -> void:
 		if velocity.y < 0: animated_sprite.play("jump")
 		else: animated_sprite.play("fall")
 	else:
-		if Input.get_axis("left", "right") != 0: animated_sprite.play("run")
+		if move_dir != 0: animated_sprite.play("run")
 		else: animated_sprite.play("idle")
 
 func take_hit(damage: int, knockback_force: float) -> void:
-	# IF WE ARE INVINCIBLE, IGNORE THE HIT ENTIRELY
-	if invincibility_timer > 0: return 
-	
 	attack_state = 0
 	attack_timer = 0.0
 	next_attack_queued = false
 	
 	# Give the player 1 second of God-mode and 0.4 seconds of physical stun
-	invincibility_timer = 1.0 
 	stun_timer = 0.4 
 	
 	velocity.x = knockback_force 

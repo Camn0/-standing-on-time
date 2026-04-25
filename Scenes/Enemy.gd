@@ -5,7 +5,7 @@ enum AIState { IDLE, PATROL, CHASE, ATTACK, HIT, DEATH }
 var current_state = AIState.IDLE
 
 @export var SPEED = 100.0
-@export var MAX_HEALTH = 3
+@export var MAX_HEALTH = 5
 @export var KNOCKBACK_RESISTANCE = 0.8 
 
 var health = MAX_HEALTH
@@ -45,6 +45,10 @@ func _physics_process(delta: float) -> void:
 		velocity += get_gravity() * delta
 		if current_state != AIState.HIT and current_state != AIState.DEATH:
 			sprite.play("fall")
+	else:
+		# FIX: Return to current state animation when landing
+		if sprite.animation == "fall":
+			switch_state(current_state)
 
 	match current_state:
 		AIState.IDLE: process_idle(delta)
@@ -120,6 +124,13 @@ func switch_state(new_state: AIState) -> void:
 		AIState.ATTACK:
 			if randf() > 0.5: sprite.play("attack1")
 			else: sprite.play("attack2")
+			
+			# FIX: Wait for the visual "impact" frame before dealing damage
+			# Change 0.2 to match when the enemy's hand/sword actually hits the player
+			await get_tree().create_timer(0.2).timeout
+			if current_state == AIState.ATTACK:
+				deal_damage_to_player()
+				
 		AIState.HIT: sprite.play("take_hit")
 		AIState.DEATH: sprite.play("death")
 
@@ -153,13 +164,6 @@ func _on_attack_range_body_exited(body: Node2D) -> void:
 
 func _on_animated_sprite_2d_animation_finished() -> void:
 	if current_state == AIState.ATTACK:
-		# 1. Deal damage
-		if is_in_attack_range and target_player:
-			# YOUR EXACT MATH FIX
-			var knockback_dir = sign(target_player.global_position.x - global_position.x)
-			if knockback_dir == 0: knockback_dir = direction 
-			target_player.take_hit(1, knockback_dir * 500.0) 
-		
 		# 2. STOP SPAMMING: Put the enemy in timeout for 1.0 seconds
 		attack_cooldown = 1.0 
 		switch_state(AIState.IDLE) 
@@ -167,11 +171,19 @@ func _on_animated_sprite_2d_animation_finished() -> void:
 	elif current_state == AIState.DEATH:
 		queue_free() 
 
+# NEW FUNCTION: Handles the actual damage logic
+func deal_damage_to_player() -> void:
+	if is_in_attack_range and target_player:
+		# YOUR EXACT MATH FIX
+		var knockback_dir = sign(target_player.global_position.x - global_position.x)
+		if knockback_dir == 0: knockback_dir = direction 
+		target_player.take_hit(1, knockback_dir * 500.0) 
+
 func take_hit(damage: int, knockback_force: float) -> void:
 	if current_state == AIState.DEATH: return
 	health -= damage
 	if health <= 0: switch_state(AIState.DEATH)
 	else:
-		switch_state(AIState.HIT)
-		velocity.y = -50.0 
+		velocity.y = -100.0 
 		velocity.x = knockback_force * KNOCKBACK_RESISTANCE
+		switch_state(AIState.HIT)

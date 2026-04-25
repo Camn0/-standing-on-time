@@ -17,19 +17,11 @@
 [ext_resource type="Script" uid="uid://jhknxbtomkla" path="res://Scenes/Enemy.gd" id="14_85gyg"]
 [ext_resource type="Texture2D" uid="uid://cyhq4swcwjida" path="res://Sprites/Hero Knight/Sprites/Idle.png" id="15_c32x4"]
 [ext_resource type="Texture2D" uid="uid://bd7l4kmjpu23i" path="res://Sprites/Hero Knight/Sprites/Attack1.png" id="15_el1jj"]
-[ext_resource type="Texture2D" uid="uid://dkpv27nf6o8lq" path="res://Sprites/Texture/TX Tileset Ground.png" id="15_uu23e"]
 [ext_resource type="Texture2D" uid="uid://btbki00skmw3f" path="res://Sprites/Hero Knight/Sprites/Attack2.png" id="16_03fgm"]
 [ext_resource type="Texture2D" uid="uid://hdks0gomu044" path="res://Sprites/Hero Knight/Sprites/Run.png" id="16_gwne5"]
 [ext_resource type="Texture2D" uid="uid://drlubttc7pmln" path="res://Sprites/Hero Knight/Sprites/Take Hit.png" id="17_hpu6p"]
 [ext_resource type="Texture2D" uid="uid://cfsb53ic16bxj" path="res://Sprites/Hero Knight/Sprites/Death.png" id="17_uu23e"]
 [ext_resource type="Texture2D" uid="uid://ccc5h5c34asug" path="res://Sprites/Hero Knight/Sprites/Fall.png" id="18_ny2ev"]
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_hh5uf"]
-size = Vector2(1029, 36)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_gaaxb"]
-atlas = ExtResource("15_uu23e")
-region = Rect2(125.5, 155.5, 35, 41)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_v1qfn"]
 
@@ -324,7 +316,17 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_uu23e"]
-size = Vector2(58, 39)
+size = Vector2(51, 37.75)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hh5uf"]
+size = Vector2(1029, 36)
+
+[sub_resource type="Gradient" id="Gradient_el1jj"]
+offsets = PackedFloat32Array(0, 0.4566929, 0.88188976, 0.984252, 0.992126, 1)
+colors = PackedColorArray(1, 1, 1, 1, 0.7194644, 0.67664635, 0.5464005, 1, 0.82678944, 0.65047985, 0.1141732, 1, 0.85513943, 0.643568, 0, 1, 0.6850394, 0.6850394, 0.6850394, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_03fgm"]
+gradient = SubResource("Gradient_el1jj")
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_fg7i4"]
 
@@ -724,25 +726,12 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_el1jj"]
-size = Vector2(57, 28)
+size = Vector2(56, 20)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_03fgm"]
-size = Vector2(429, 66)
+size = Vector2(430, 20)
 
 [node name="Node2D" type="Node2D" unique_id=1980593904]
-
-[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1663579360]
-position = Vector2(636, 239)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=471988285]
-position = Vector2(1, 0)
-shape = SubResource("RectangleShape2D_hh5uf")
-
-[node name="Sprite2D" type="Sprite2D" parent="StaticBody2D" unique_id=1847466821]
-texture_filter = 1
-position = Vector2(-38.999992, 256.99997)
-scale = Vector2(32.171432, 21.457317)
-texture = SubResource("AtlasTexture_gaaxb")
 
 [node name="Player" type="CharacterBody2D" parent="." unique_id=1488845536]
 position = Vector2(466, 192)
@@ -786,14 +775,20 @@ player = NodePath("../..")
 [node name="SwordHitbox" type="Area2D" parent="Player" unique_id=1009118576]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player/SwordHitbox" unique_id=1402081182]
-position = Vector2(-1, -1.5)
+position = Vector2(-1.5, -0.875)
 shape = SubResource("RectangleShape2D_uu23e")
 
-[node name="Camera2D" type="Camera2D" parent="Player" unique_id=1241022022]
-zoom = Vector2(2, 2)
-position_smoothing_enabled = true
-drag_horizontal_enabled = true
-drag_vertical_enabled = true
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1663579360]
+position = Vector2(636, 239)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=471988285]
+position = Vector2(1, 0)
+shape = SubResource("RectangleShape2D_hh5uf")
+
+[node name="Sprite2D" type="Sprite2D" parent="StaticBody2D" unique_id=1847466821]
+position = Vector2(-0.5, 1)
+scale = Vector2(4.0195313, 35.999996)
+texture = SubResource("GradientTexture1D_03fgm")
 
 [node name="Enemy" type="CharacterBody2D" parent="." unique_id=1635818909]
 position = Vector2(144, 178)
@@ -817,11 +812,10 @@ autoplay = "idle"
 [node name="AttackRange" type="Area2D" parent="Enemy" unique_id=451480043]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Enemy/AttackRange" unique_id=196451475]
-position = Vector2(0.5, -1)
 shape = SubResource("RectangleShape2D_el1jj")
 
 [node name="ChaseRange" type="Area2D" parent="Enemy" unique_id=107781023]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Enemy/ChaseRange" unique_id=692557109]
-position = Vector2(0.5, -18)
+position = Vector2(1, 0)
 shape = SubResource("RectangleShape2D_03fgm")
