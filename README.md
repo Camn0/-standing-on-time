@@ -3,7 +3,7 @@
 ![Engine](https://img.shields.io/badge/Godot-4.6-blue)
 ![Architecture](https://img.shields.io/badge/Pattern-State_Machine-red)
 
-https://github.com/user-attachments/assets/283ce8ef-f53c-4756-9ad5-89ef1f88809e
+https://github.com/user-attachments/assets/38a6c886-c8a9-42e9-ab54-2f966a53c889
 
 ## Overview
 This repository contains the finalized technical calibration prototype for the **DIOSPA Divisi Code**. The system has evolved from a monolithic controller into a decoupled, event-driven architecture. It successfully integrates deterministic kinematics, a modular Finite State Machine (FSM), and a "Hunter-Patrol" AI paradigm.
